@@ -2,6 +2,12 @@
 
 A full-stack enterprise task tracking system where admins assign tasks to employees and track completion status across the company.
 
+## 🌐 Live Demo
+
+**🔗 [View Live Application](https://tasktracker-vercel.vercel.app)**
+
+> **Note:** The live demo requires Convex backend to be running. For local development, follow the setup instructions below.
+
 ## Features
 
 ### Core Functionality

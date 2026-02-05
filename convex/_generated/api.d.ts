@@ -11,6 +11,7 @@
 import type * as auth from "../auth.js";
 import type * as dashboard from "../dashboard.js";
 import type * as tasks from "../tasks.js";
+import type * as test from "../test.js";
 import type * as users from "../users.js";
 
 import type {
@@ -23,6 +24,7 @@ declare const fullApi: ApiFromModules<{
   auth: typeof auth;
   dashboard: typeof dashboard;
   tasks: typeof tasks;
+  test: typeof test;
   users: typeof users;
 }>;
 
