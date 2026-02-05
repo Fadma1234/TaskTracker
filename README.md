@@ -4,9 +4,9 @@ A full-stack enterprise task tracking system where admins assign tasks to employ
 
 ## 🌐 Live Demo
 
-**🔗 Live Application:** [Deploying...](#deployment-instructions)
+**🔗 [View Live Application](https://your-project.vercel.app)**
 
-> **Note:** To get your live link, follow the deployment instructions below. The app will be hosted on Vercel with Convex backend.
+> **Note:** Replace the URL above with your actual Vercel deployment URL after deployment. See [QUICK_DEPLOY.md](./QUICK_DEPLOY.md) for deployment instructions.
 
 ## Features
 
