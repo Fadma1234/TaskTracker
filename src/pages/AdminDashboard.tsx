@@ -30,6 +30,7 @@ export default function AdminDashboard() {
   const createTask = useMutation(api.tasks.createTask);
   const updateTaskStatus = useMutation(api.tasks.updateTaskStatus);
   const deleteTask = useMutation(api.tasks.deleteTask);
+  const deleteEmployee = useMutation(api.users.deleteEmployee);
 
   const handleLogout = () => {
     localStorage.removeItem("userEmail");
@@ -71,6 +72,22 @@ export default function AdminDashboard() {
     } catch (error) {
       console.error("Failed to delete task:", error);
       alert("Failed to delete task");
+    }
+  };
+
+  const handleDeleteEmployee = async (employeeId: Id<"users">, employeeName: string) => {
+    const confirmMessage = `Are you sure you want to delete ${employeeName}?\n\nThis will also delete all tasks assigned to this employee.`;
+    if (!confirm(confirmMessage)) return;
+    
+    try {
+      const result = await deleteEmployee({ employeeId, userEmail });
+      alert(
+        `Employee ${employeeName} deleted successfully.\n` +
+        `${result.deletedTasksCount} task(s) were also deleted.`
+      );
+    } catch (error: any) {
+      console.error("Failed to delete employee:", error);
+      alert(error?.message || "Failed to delete employee");
     }
   };
 
@@ -181,9 +198,32 @@ export default function AdminDashboard() {
             <h3 className="text-lg font-semibold mb-4">Employee Performance</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {employeeSummaries.map((summary) => (
-                <div key={summary.employee._id} className="border rounded-lg p-4">
-                  <h4 className="font-medium text-gray-900">{summary.employee.name}</h4>
+                <div key={summary.employee._id} className="border rounded-lg p-4 relative">
+                  <div className="flex justify-between items-start mb-2">
+                    <h4 className="font-medium text-gray-900">{summary.employee.name}</h4>
+                    <button
+                      onClick={() => handleDeleteEmployee(summary.employee._id, summary.employee.name)}
+                      className="text-red-600 hover:text-red-800 p-1"
+                      title="Delete employee"
+                    >
+                      <svg
+                        className="w-5 h-5"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                        />
+                      </svg>
+                    </button>
+                  </div>
                   <div className="mt-2 text-sm text-gray-600">
+                    <div>Email: {summary.employee.email}</div>
+                    <div className="mt-2 font-medium">Tasks:</div>
                     <div>Total: {summary.totalTasks}</div>
                     <div>Pending: {summary.pendingTasks}</div>
                     <div>In Progress: {summary.inProgressTasks}</div>
@@ -191,6 +231,62 @@ export default function AdminDashboard() {
                   </div>
                 </div>
               ))}
+            </div>
+          </div>
+        )}
+
+        {/* All Employees List Section */}
+        {employees && employees.length > 0 && (
+          <div className="mb-8 bg-white rounded-lg shadow-md p-6">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-semibold">All Employees</h3>
+              <span className="text-sm text-gray-500">{employees.length} employee(s)</span>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Name
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Email
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Tasks Assigned
+                    </th>
+                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {employees.map((employee) => {
+                    const employeeTasks = tasks?.filter((t) => t.assignedTo === employee._id) || [];
+                    return (
+                      <tr key={employee._id} className="hover:bg-gray-50">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                          {employee.name}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {employee.email}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {employeeTasks.length} task(s)
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                          <button
+                            onClick={() => handleDeleteEmployee(employee._id, employee.name)}
+                            className="text-red-600 hover:text-red-900 px-3 py-1 rounded hover:bg-red-50"
+                          >
+                            Delete
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
             </div>
           </div>
         )}

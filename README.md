@@ -2,6 +2,12 @@
 
 A full-stack enterprise task tracking system where admins assign tasks to employees and track completion status across the company.
 
+## 🌐 Live Demo
+
+**🔗 [View Live Application](https://your-project.vercel.app)**
+
+> **Note:** Replace the URL above with your actual Vercel deployment URL after deployment. See [QUICK_DEPLOY.md](./QUICK_DEPLOY.md) for deployment instructions.
+
 ## Features
 
 ### Core Functionality
