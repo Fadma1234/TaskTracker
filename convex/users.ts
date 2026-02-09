@@ -1,4 +1,4 @@
-import { query } from "./_generated/server";
+import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
 
 export const getAllEmployees = query({
@@ -51,10 +51,59 @@ export const getCurrentUser = query({
   handler: async (ctx) => {
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) return null;
+    
+    const email = identity.email;
+    if (!email) return null;
 
     return await ctx.db
       .query("users")
-      .withIndex("email", (q) => q.eq("email", identity.email))
+      .withIndex("email", (q) => q.eq("email", email))
       .first();
+  },
+});
+
+export const deleteEmployee = mutation({
+  args: {
+    employeeId: v.id("users"),
+    userEmail: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const { employeeId, userEmail } = args;
+    
+    // Verify admin permissions
+    const user = await ctx.db
+      .query("users")
+      .withIndex("email", (q) => q.eq("email", userEmail))
+      .first();
+
+    if (!user || user.role !== "admin") {
+      throw new Error("Only admins can delete employees");
+    }
+
+    // Verify the user being deleted is an employee
+    const employee = await ctx.db.get(employeeId);
+    if (!employee) {
+      throw new Error("Employee not found");
+    }
+
+    if (employee.role !== "employee") {
+      throw new Error("Can only delete employees");
+    }
+
+    // Check if employee has any tasks assigned
+    const assignedTasks = await ctx.db
+      .query("tasks")
+      .withIndex("assignedTo", (q) => q.eq("assignedTo", employeeId))
+      .collect();
+
+    // Delete all tasks assigned to this employee
+    for (const task of assignedTasks) {
+      await ctx.db.delete(task._id);
+    }
+
+    // Delete the employee
+    await ctx.db.delete(employeeId);
+    
+    return { success: true, deletedTasksCount: assignedTasks.length };
   },
 });
