@@ -8,8 +8,43 @@ import TaskCard from "../components/TaskCard";
 import TaskForm from "../components/TaskForm";
 import EmployeeFilter from "../components/EmployeeFilter";
 import StatusFilter from "../components/StatusFilter";
+import AICopilotPanel from "../components/AICopilotPanel";
+import {
+  demoAIInsight,
+  demoEmployees,
+  demoStats,
+  demoTasks,
+} from "../lib/demoData";
+
+function DemoBadge() {
+  return (
+    <div className="fixed bottom-4 right-4 z-50 rounded-full bg-orange-500 px-4 py-2 text-sm font-bold uppercase tracking-wide text-white shadow-lg">
+      Demo
+    </div>
+  );
+}
 
 export default function AdminDashboard() {
+  const [demoMode, setDemoMode] = useState(
+    () => localStorage.getItem("demoMode") === "true"
+  );
+
+  const toggleDemoMode = () => {
+    setDemoMode((current) => {
+      const next = !current;
+      localStorage.setItem("demoMode", String(next));
+      return next;
+    });
+  };
+
+  if (demoMode) {
+    return <DemoAdminDashboard onToggleDemo={toggleDemoMode} />;
+  }
+
+  return <LiveAdminDashboard onToggleDemo={toggleDemoMode} />;
+}
+
+function LiveAdminDashboard({ onToggleDemo }: { onToggleDemo: () => void }) {
   const navigate = useNavigate();
   const [showTaskForm, setShowTaskForm] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState<Id<"users"> | "all">("all");
@@ -143,6 +178,12 @@ export default function AdminDashboard() {
                 Welcome, {currentUser.name}
               </span>
               <button
+                onClick={onToggleDemo}
+                className="px-4 py-2 text-sm font-medium text-orange-700 bg-orange-100 rounded-md hover:bg-orange-200"
+              >
+                Demo Mode
+              </button>
+              <button
                 onClick={handleLogout}
                 className="px-4 py-2 text-sm text-white bg-red-600 rounded-md hover:bg-red-700"
               >
@@ -155,6 +196,8 @@ export default function AdminDashboard() {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <Dashboard stats={stats} />
+
+        <AICopilotPanel userEmail={userEmail} />
 
         <div className="mb-6 flex justify-between items-center">
           <h2 className="text-2xl font-bold text-gray-900">Tasks</h2>
@@ -317,6 +360,204 @@ export default function AdminDashboard() {
             onCancel={() => setShowTaskForm(false)}
           />
         )}
+      </div>
+    </div>
+  );
+}
+
+function DemoAdminDashboard({ onToggleDemo }: { onToggleDemo: () => void }) {
+  const [tasks, setTasks] = useState(demoTasks);
+  const [employees, setEmployees] = useState(demoEmployees);
+  const [selectedEmployee, setSelectedEmployee] = useState<Id<"users"> | "all">("all");
+  const [selectedStatus, setSelectedStatus] = useState<
+    "all" | "pending" | "in_progress" | "completed"
+  >("all");
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const stats = {
+    pending: tasks.filter((task) => task.status === "pending").length,
+    in_progress: tasks.filter((task) => task.status === "in_progress").length,
+    completed: tasks.filter((task) => task.status === "completed").length,
+    total: tasks.length,
+  };
+
+  const employeeSummaries = employees.map((employee) => {
+    const employeeTasks = tasks.filter((task) => task.assignedTo === employee._id);
+    return {
+      employee,
+      totalTasks: employeeTasks.length,
+      pendingTasks: employeeTasks.filter((task) => task.status === "pending").length,
+      inProgressTasks: employeeTasks.filter((task) => task.status === "in_progress").length,
+      completedTasks: employeeTasks.filter((task) => task.status === "completed").length,
+    };
+  });
+
+  const filteredTasks = tasks.filter((task) => {
+    if (selectedEmployee !== "all" && task.assignedTo !== selectedEmployee) {
+      return false;
+    }
+    if (selectedStatus !== "all" && task.status !== selectedStatus) {
+      return false;
+    }
+    if (
+      searchQuery &&
+      !task.title.toLowerCase().includes(searchQuery.toLowerCase()) &&
+      !task.description.toLowerCase().includes(searchQuery.toLowerCase())
+    ) {
+      return false;
+    }
+    return true;
+  });
+
+  const employeeMap = new Map(employees.map((employee) => [employee._id, employee.name]));
+
+  const handleStatusChange = (
+    taskId: Id<"tasks">,
+    status: "pending" | "in_progress" | "completed"
+  ) => {
+    setTasks((currentTasks) =>
+      currentTasks.map((task) =>
+        task._id === taskId
+          ? {
+              ...task,
+              status,
+              updatedAt: Date.now(),
+              completedAt: status === "completed" ? Date.now() : undefined,
+            }
+          : task
+      )
+    );
+  };
+
+  const handleDeleteTask = (taskId: Id<"tasks">) => {
+    setTasks((currentTasks) => currentTasks.filter((task) => task._id !== taskId));
+  };
+
+  const handleDeleteEmployee = (employeeId: Id<"users">) => {
+    setEmployees((currentEmployees) =>
+      currentEmployees.filter((employee) => employee._id !== employeeId)
+    );
+    setTasks((currentTasks) =>
+      currentTasks.filter((task) => task.assignedTo !== employeeId)
+    );
+    if (selectedEmployee === employeeId) {
+      setSelectedEmployee("all");
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <DemoBadge />
+      <nav className="bg-white shadow-sm border-b">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between h-16">
+            <div className="flex items-center">
+              <h1 className="text-xl font-bold text-gray-900">Admin Dashboard</h1>
+              <span className="ml-3 rounded-full bg-orange-100 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-orange-700">
+                Demo Mode
+              </span>
+            </div>
+            <div className="flex items-center gap-4">
+              <span className="text-sm text-gray-700">Welcome, Demo Admin</span>
+              <button
+                onClick={onToggleDemo}
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"
+              >
+                Exit Demo
+              </button>
+            </div>
+          </div>
+        </div>
+      </nav>
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <Dashboard stats={stats.total === demoStats.total ? demoStats : stats} />
+
+        <AICopilotPanel
+          userEmail="demo.admin@company.com"
+          demoMode={true}
+          initialInsight={demoAIInsight}
+        />
+
+        <div className="mb-6 flex justify-between items-center">
+          <h2 className="text-2xl font-bold text-gray-900">Tasks</h2>
+          <span className="rounded-md bg-orange-50 px-3 py-2 text-sm text-orange-700">
+            Demo data is local only. No database calls are made.
+          </span>
+        </div>
+
+        <div className="mb-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+          <EmployeeFilter
+            employees={employees}
+            selectedEmployee={selectedEmployee}
+            onEmployeeChange={setSelectedEmployee}
+          />
+          <StatusFilter
+            selectedStatus={selectedStatus}
+            onStatusChange={setSelectedStatus}
+          />
+          <div>
+            <label htmlFor="demo-search" className="block text-sm font-medium text-gray-700 mb-2">
+              Search
+            </label>
+            <input
+              id="demo-search"
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search demo tasks..."
+              className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+            />
+          </div>
+        </div>
+
+        {employeeSummaries.length > 0 && (
+          <div className="mb-8 bg-white rounded-lg shadow-md p-6">
+            <h3 className="text-lg font-semibold mb-4">Employee Performance</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {employeeSummaries.map((summary) => (
+                <div key={summary.employee._id} className="border rounded-lg p-4">
+                  <div className="flex justify-between items-start mb-2">
+                    <h4 className="font-medium text-gray-900">{summary.employee.name}</h4>
+                    <button
+                      onClick={() => handleDeleteEmployee(summary.employee._id)}
+                      className="text-red-600 hover:text-red-800 text-sm"
+                    >
+                      Delete
+                    </button>
+                  </div>
+                  <div className="mt-2 text-sm text-gray-600">
+                    <div>Email: {summary.employee.email}</div>
+                    <div className="mt-2 font-medium">Tasks:</div>
+                    <div>Total: {summary.totalTasks}</div>
+                    <div>Pending: {summary.pendingTasks}</div>
+                    <div>In Progress: {summary.inProgressTasks}</div>
+                    <div>Completed: {summary.completedTasks}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredTasks.length > 0 ? (
+            filteredTasks.map((task) => (
+              <TaskCard
+                key={task._id}
+                task={task}
+                assignedToName={employeeMap.get(task.assignedTo)}
+                onStatusChange={handleStatusChange}
+                onDelete={handleDeleteTask}
+                canEdit={true}
+              />
+            ))
+          ) : (
+            <div className="col-span-full text-center text-gray-500 py-8">
+              No demo tasks found
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

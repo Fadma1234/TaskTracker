@@ -1,178 +1,186 @@
-# Enterprise Task Tracker Application
+# TaskTracker AI Operations Copilot
 
-A full-stack enterprise task tracking system where admins assign tasks to employees and track completion status across the company.
+TaskTracker is an AI-powered internal workflow tool for managers and employees. It started as an enterprise task tracker and now includes an AI Operations Copilot that summarizes team execution, detects delivery risk, recommends manager actions, and drafts employee follow-ups.
 
-## 🌐 Live Demo
+This project is designed for the Klaviyo AI Builder Resident application. It demonstrates the ability to turn an ambiguous internal productivity problem into a shipped AI workflow automation with a real frontend, backend, database, deployment path, and clear demo story.
 
-**🔗 [View Live Application](https://your-project.vercel.app)**
+## Live Demo
 
-> **Note:** Replace the URL above with your actual Vercel deployment URL after deployment. See [QUICK_DEPLOY.md](./QUICK_DEPLOY.md) for deployment instructions.
+Live application: [Add your Vercel URL here](https://your-project.vercel.app)
 
-## Features
+Repository: `Fadma1234/TaskTracker`
 
-### Core Functionality
+## Problem
 
-- **Task Management**
-  - Create tasks (Admin only)
-  - Assign tasks to employees
-  - Update task status (Pending → In Progress → Completed)
-  - Edit task details
-  - Delete tasks
+Managers often have task data spread across dashboards, status updates, and employee conversations. The raw task list shows what exists, but it does not answer the questions managers ask every day:
 
-- **Employee Tracking**
-  - View all employees
-  - Filter employees by task status
-  - View employee task history
+- What changed?
+- What is blocked?
+- Which work should I prioritize first?
+- Who needs a follow-up?
+- What should I say to them?
 
-- **Dashboard Views**
-  - Admin dashboard: Overview of all tasks, employee performance
-  - Employee dashboard: Personal tasks assigned to them
-  - Task list with filtering and sorting
+TaskTracker AI turns task data into an actionable operating brief.
 
-- **Real-time Updates**
-  - Live task status updates across all users
-  - Real-time notifications when tasks are assigned/completed
+## Solution
 
-### Authentication & Authorization
+The app supports two roles:
 
-- User login/logout
-- Role-based access:
-  - **Admin**: Can create tasks, assign to any employee, view all tasks
-  - **Employee**: Can view own tasks, update status, cannot create/assign tasks
+- Admins create tasks, assign work, monitor employees, delete tasks, delete employees, and generate AI team briefs.
+- Employees view assigned tasks, update status, and use an AI task coach to break work into next steps.
+
+The AI layer provides:
+
+- Team summaries with workload and completion context.
+- Blocker detection for overdue, stale, and high-priority work.
+- Priority recommendations for manager action.
+- Follow-up drafts for employee check-ins.
+- Employee task coaching with suggested next steps and status update drafts.
+
+## AI Workflow
+
+```mermaid
+flowchart TD
+  AdminDashboard[AdminDashboard] --> AICopilotPanel[AICopilotPanel]
+  EmployeeDashboard[EmployeeDashboard] --> TaskCoach[TaskCoach]
+  AICopilotPanel --> ConvexAI[Convex_AI_Actions]
+  TaskCoach --> ConvexAI
+  ConvexAI --> ConvexData[Users_Tasks_AIInsights]
+  ConvexAI --> OpenAI[OpenAI_API_Optional]
+  OpenAI --> ConvexAI
+  ConvexAI --> UIResults[Structured_AI_Output]
+```
+
+If `OPENAI_API_KEY` is configured in Convex, the app calls an LLM from the server. If no key is configured, it uses deterministic fallback rules so reviewers can still demo the full workflow without secrets.
+
+## Core Features
+
+- Admin dashboard with real-time task statistics.
+- Task creation, assignment, filtering, searching, status updates, and deletion.
+- Employee performance cards and employee deletion.
+- AI Operations Copilot for team execution briefs.
+- Employee AI Task Coach for task breakdowns and status drafts.
+- Convex backend with real-time data and server-side AI actions.
+- Vercel-ready frontend configuration.
 
 ## Tech Stack
 
-- **Frontend**: React 18+ with Vite, TypeScript, Tailwind CSS
-- **Backend**: Convex (database, real-time queries/mutations)
-- **Routing**: React Router DOM
+- Frontend: React, TypeScript, Vite, Tailwind CSS
+- Backend: Convex database, queries, mutations, and actions
+- AI: OpenAI-compatible chat completion API via Convex server action
+- Deployment: Vercel frontend and Convex production backend
 
-## Getting Started
+## Project Structure
 
-### Prerequisites
-
-- Node.js 18+ installed
-- npm or yarn package manager
-
-### Installation
-
-1. Clone the repository:
-```bash
-git clone <repository-url>
-cd TaskTracker
+```text
+TaskTracker/
+├── convex/
+│   ├── ai.ts                 # AI team brief and task coach actions
+│   ├── auth.ts               # Demo auth user creation and lookup
+│   ├── dashboard.ts          # Dashboard aggregation queries
+│   ├── schema.ts             # Users, tasks, and aiInsights tables
+│   ├── tasks.ts              # Task queries and mutations
+│   └── users.ts              # Employee queries and deletion mutation
+├── src/
+│   ├── components/
+│   │   ├── AICopilotPanel.tsx
+│   │   ├── TaskCoach.tsx
+│   │   ├── TaskCard.tsx
+│   │   ├── TaskForm.tsx
+│   │   └── Dashboard.tsx
+│   ├── pages/
+│   │   ├── AdminDashboard.tsx
+│   │   ├── EmployeeDashboard.tsx
+│   │   ├── Login.tsx
+│   │   └── Tasks.tsx
+│   └── lib/
+│       └── convex.ts
+├── DEPLOYMENT.md
+├── QUICK_DEPLOY.md
+├── VERCEL_SETUP.md
+└── vercel.json
 ```
 
-2. Install dependencies:
+## Setup
+
+Install dependencies:
+
 ```bash
 npm install
 ```
 
-3. Set up Convex:
+Start Convex locally:
+
 ```bash
 npx convex dev
 ```
 
-This will:
-- Create a Convex account (if you don't have one)
-- Initialize the Convex project
-- Generate a deployment URL
-- Create a `.env.local` file with your `VITE_CONVEX_URL`
+Start the frontend:
 
-4. Start the development server:
 ```bash
 npm run dev
 ```
 
-The application will be available at `http://localhost:5173`
+Open the Vite local URL, create an admin account, create employee accounts, assign tasks, then generate an AI team brief from the admin dashboard.
 
-### First Login
+## Environment Variables
 
-1. Navigate to the login page
-2. Enter your name, email, and select your role (Admin or Employee)
-3. Click "Sign in" to create your account
-4. You'll be redirected to your dashboard based on your role
+Frontend:
 
-## Project Structure
-
-```
-TaskTracker/
-├── convex/
-│   ├── _generated/          # Auto-generated by Convex
-│   ├── auth.ts              # Authentication functions
-│   ├── schema.ts            # Database schema definitions
-│   ├── tasks.ts             # Task mutations and queries
-│   ├── users.ts             # User queries
-│   └── dashboard.ts         # Dashboard aggregation queries
-├── src/
-│   ├── components/
-│   │   ├── TaskCard.tsx
-│   │   ├── TaskForm.tsx
-│   │   ├── EmployeeFilter.tsx
-│   │   ├── StatusFilter.tsx
-│   │   └── Dashboard.tsx
-│   ├── pages/
-│   │   ├── Login.tsx
-│   │   ├── AdminDashboard.tsx
-│   │   ├── EmployeeDashboard.tsx
-│   │   └── Tasks.tsx
-│   ├── lib/
-│   │   └── convex.ts        # Convex client setup
-│   ├── App.tsx
-│   ├── main.tsx
-│   └── index.css
-├── package.json
-├── vite.config.ts
-├── tsconfig.json
-└── tailwind.config.js
+```text
+VITE_CONVEX_URL=http://127.0.0.1:3210
 ```
 
-## Available Scripts
+Production Vercel should use your Convex cloud URL:
 
-- `npm run dev` - Start the development server
-- `npm run build` - Build for production
-- `npm run preview` - Preview the production build
-- `npm run convex:dev` - Run Convex development server
-- `npm run convex:deploy` - Deploy Convex functions to production
-
-## Database Schema
-
-### Users Table
-- `_id`: Id<"users">
-- `name`: string
-- `email`: string
-- `role`: "admin" | "employee"
-- `createdAt`: number
-
-### Tasks Table
-- `_id`: Id<"tasks">
-- `title`: string
-- `description`: string
-- `assignedTo`: Id<"users">
-- `assignedBy`: Id<"users">
-- `status`: "pending" | "in_progress" | "completed"
-- `priority`: "low" | "medium" | "high"
-- `dueDate`: number (optional)
-- `createdAt`: number
-- `updatedAt`: number
-- `completedAt`: number (optional)
-
-## Development Notes
-
-### Authentication
-
-This application uses a simple demo authentication system based on localStorage. For production use, you should integrate with:
-- Clerk
-- Auth0
-- Convex Auth
-- Or another authentication provider
-
-### Environment Variables
-
-Create a `.env.local` file with:
-```
-VITE_CONVEX_URL=your_convex_deployment_url
+```text
+VITE_CONVEX_URL=https://your-project.convex.cloud
 ```
 
-This is automatically generated when you run `npx convex dev`.
+AI configuration is server-side in Convex:
+
+```bash
+npx convex env set OPENAI_API_KEY your_openai_key
+npx convex env set OPENAI_MODEL gpt-4o-mini
+```
+
+`OPENAI_API_KEY` is optional for demos because the app has deterministic fallback analysis.
+
+## Demo Script
+
+1. Log in as an admin.
+2. Create two employee accounts.
+3. Assign several tasks with different priorities and due dates.
+4. Mark one task in progress and leave another overdue or stale.
+5. Open the admin dashboard and click `Generate Team Brief`.
+6. Show the AI summary, risks, recommended actions, and follow-up drafts.
+7. Log in as an employee and click `Coach Me` on a task.
+8. Show the suggested next steps and status update draft.
+
+## Why This Matters
+
+This project demonstrates the core AI Builder skill set:
+
+- Translating a business workflow into an AI-powered product.
+- Building full-stack functionality across frontend, backend, data, and deployment.
+- Keeping AI secrets server-side.
+- Designing graceful fallbacks for reliable demos.
+- Producing actionable output instead of generic chatbot responses.
+
+## Production Notes
+
+- Demo authentication uses localStorage and email-based user lookup. A production version should use Clerk, Auth0, Convex Auth, or another identity provider.
+- The AI prompts are scoped to task and employee metadata stored in Convex.
+- The OpenAI key is never exposed to the browser.
+- Deployment instructions are available in `DEPLOYMENT.md`, `QUICK_DEPLOY.md`, and `VERCEL_SETUP.md`.
+
+## Future Improvements
+
+- Add proper authentication and organization-level tenancy.
+- Add notification integrations for Slack or email.
+- Add audit logs for AI-generated follow-ups.
+- Add human approval workflow before sending messages.
+- Add embeddings/RAG for company policy or project documentation.
 
 ## License
 

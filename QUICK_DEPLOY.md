@@ -1,8 +1,6 @@
 # Quick Deployment Guide
 
-## ✅ Step 1: Deploy Convex Backend (REQUIRED FIRST)
-
-Run these commands in your terminal:
+## Step 1: Deploy Convex
 
 ```bash
 cd c:\Users\fadma\TaskTracker
@@ -10,69 +8,37 @@ npx convex login
 npx convex deploy
 ```
 
-**What happens:**
-- `npx convex login` - Opens browser to login/create Convex account
-- `npx convex deploy` - Deploys your backend and gives you a production URL
+Save the production URL from the output, for example:
 
-**Save the production URL** - it will look like: `https://your-project.convex.cloud`
-
-## ✅ Step 2: Deploy to Vercel
-
-### Option A: Via Vercel Website (Easiest)
-
-1. Go to https://vercel.com and sign up/login (use GitHub)
-2. Click "Add New Project"
-3. Import your GitHub repository: `Fadma1234/TaskTracker`
-4. Configure:
-   - Framework: **Vite**
-   - Root Directory: `./`
-   - Build Command: `npm run build`
-   - Output Directory: `dist`
-5. **Add Environment Variable:**
-   - Name: `VITE_CONVEX_URL`
-   - Value: (paste your Convex production URL from Step 1)
-6. Click "Deploy"
-7. Wait for deployment (2-3 minutes)
-8. Copy your deployment URL (e.g., `https://tasktracker-xyz.vercel.app`)
-
-### Option B: Via Vercel CLI
-
-```bash
-npm i -g vercel
-vercel login
-vercel
+```text
+https://your-project.convex.cloud
 ```
 
-When prompted:
-- Link to existing project? **No**
-- Project name: **tasktracker**
-- Directory: **./**
-- Override settings? **No**
-
-Then add environment variable:
-```bash
-vercel env add VITE_CONVEX_URL
-```
-Enter your Convex production URL when prompted.
-
-Deploy to production:
-```bash
-vercel --prod
-```
-
-## ✅ Step 3: Update README with Live Link
-
-After you get your Vercel URL, update `README.md`:
-- Replace the placeholder URL with your actual Vercel deployment URL
-
-## ✅ Step 4: Push to GitHub
+## Step 2: Configure AI in Convex
 
 ```bash
-git add .
-git commit -m "Update README with live deployment link"
-git push origin feature
+npx convex env set OPENAI_API_KEY your_openai_key
+npx convex env set OPENAI_MODEL gpt-4o-mini
 ```
 
-## 🎉 Done!
+The app still works without `OPENAI_API_KEY`; it falls back to deterministic workflow analysis.
 
-Your app will be live at: `https://your-project.vercel.app`
+## Step 3: Deploy to Vercel
+
+In the Vercel dashboard:
+
+1. Import `Fadma1234/TaskTracker`.
+2. Use framework preset `Vite`.
+3. Set build command to `npm run build`.
+4. Set output directory to `dist`.
+5. Add `VITE_CONVEX_URL` with your production Convex URL.
+6. Deploy.
+
+## Step 4: Add Live Link
+
+After Vercel deploys:
+
+1. Copy the Vercel URL.
+2. Add it to the GitHub repository About section.
+3. Replace the live demo placeholder in `README.md`.
+4. Commit and push.
