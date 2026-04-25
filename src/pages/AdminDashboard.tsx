@@ -26,7 +26,11 @@ function DemoBadge() {
 
 export default function AdminDashboard() {
   const [demoMode, setDemoMode] = useState(
-    () => localStorage.getItem("demoMode") === "true"
+    () => {
+      const savedMode = localStorage.getItem("demoMode");
+      if (savedMode !== null) return savedMode === "true";
+      return window.location.hostname !== "localhost" && window.location.hostname !== "127.0.0.1";
+    }
   );
 
   const toggleDemoMode = () => {

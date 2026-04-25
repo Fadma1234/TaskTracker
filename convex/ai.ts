@@ -1,4 +1,4 @@
-import { action, internalMutation, internalQuery, query } from "./_generated/server";
+import { action, internalMutation, internalQuery } from "./_generated/server";
 import { internal } from "./_generated/api";
 import { v } from "convex/values";
 
@@ -79,18 +79,6 @@ type ActionPlan = {
 
 const dayMs = 24 * 60 * 60 * 1000;
 const openAITimeoutMs = 10_000;
-
-function debugLog(
-  runId: string,
-  hypothesisId: string,
-  location: string,
-  message: string,
-  data: Record<string, unknown>
-) {
-  // #region agent log
-  fetch('http://127.0.0.1:7258/ingest/72512225-8bf5-4e09-86ed-f8b7e8f9a1a0',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'ed165d'},body:JSON.stringify({sessionId:'ed165d',runId,hypothesisId,location,message,data,timestamp:Date.now()})}).catch(()=>{});
-  // #endregion
-}
 
 export const collectAIContext = internalQuery({
   args: {
@@ -239,66 +227,6 @@ export const getInsights = internalQuery({
       .withIndex("createdBy", (q) => q.eq("createdBy", user._id))
       .order("desc")
       .take(5);
-  },
-});
-
-export const getDebugInsightEvidence = internalQuery({
-  args: {
-    userEmail: v.string(),
-  },
-  handler: async (ctx, args) => {
-    const user = await ctx.db
-      .query("users")
-      .withIndex("email", (q) => q.eq("email", args.userEmail))
-      .first();
-
-    if (!user) return [];
-
-    const insights = await ctx.db
-      .query("aiInsights")
-      .withIndex("createdBy", (q) => q.eq("createdBy", user._id))
-      .order("desc")
-      .take(5);
-
-    return insights.map((insight) => ({
-      type: insight.type,
-      status: insight.status,
-      createdAt: insight.createdAt,
-      rawLength: insight.rawResponse?.length ?? 0,
-      rawContainsRiskScores: insight.rawResponse?.includes("riskScores") ?? false,
-      rawContainsPrioritizedActions:
-        insight.rawResponse?.includes("prioritizedActions") ?? false,
-      rawContainsDraftMessages:
-        insight.rawResponse?.includes("draftMessages") ?? false,
-      chainStepOneLength: insight.chainStepOneOutput?.length ?? 0,
-      chainStepTwoLength: insight.chainStepTwoOutput?.length ?? 0,
-      hasRiskScores: Boolean(insight.riskScores?.length),
-      hasPrioritizedActions: Boolean(insight.prioritizedActions?.length),
-      hasDraftMessages: Boolean(insight.draftMessages?.length),
-    }));
-  },
-});
-
-export const getLatestDebugInsightEvidence = query({
-  handler: async (ctx) => {
-    const insights = await ctx.db.query("aiInsights").order("desc").take(5);
-
-    return insights.map((insight) => ({
-      type: insight.type,
-      status: insight.status,
-      createdAt: insight.createdAt,
-      rawLength: insight.rawResponse?.length ?? 0,
-      rawContainsRiskScores: insight.rawResponse?.includes("riskScores") ?? false,
-      rawContainsPrioritizedActions:
-        insight.rawResponse?.includes("prioritizedActions") ?? false,
-      rawContainsDraftMessages:
-        insight.rawResponse?.includes("draftMessages") ?? false,
-      chainStepOneLength: insight.chainStepOneOutput?.length ?? 0,
-      chainStepTwoLength: insight.chainStepTwoOutput?.length ?? 0,
-      hasRiskScores: Boolean(insight.riskScores?.length),
-      hasPrioritizedActions: Boolean(insight.prioritizedActions?.length),
-      hasDraftMessages: Boolean(insight.draftMessages?.length),
-    }));
   },
 });
 
@@ -574,23 +502,10 @@ async function callOpenAIActionPlan(
     "You are an AI operations planner. Return JSON with exactly these keys: riskScores, prioritizedActions, draftMessages. riskScores is [{employeeId, score, reason}] where score is 1-10. draftMessages is [{employeeId, message}].";
 
   const firstAttempt = await callOpenAIContent(prompt, baseSystemPrompt);
-  debugLog("initial", "H1,H2,H3,H4", "convex/ai.ts:callOpenAIActionPlan:firstAttempt", "OpenAI action-plan first attempt returned", {
-    status: firstAttempt?.status ?? "no_api_key",
-    rawLength: firstAttempt?.status === "success" ? firstAttempt.content.length : firstAttempt?.rawResponse?.length ?? 0,
-    startsWithJson: firstAttempt?.status === "success" ? firstAttempt.content.trimStart().startsWith("{") : false,
-    containsRiskScores: firstAttempt?.status === "success" ? firstAttempt.content.includes("riskScores") : false,
-    containsPrioritizedActions: firstAttempt?.status === "success" ? firstAttempt.content.includes("prioritizedActions") : false,
-    containsDraftMessages: firstAttempt?.status === "success" ? firstAttempt.content.includes("draftMessages") : false,
-  });
   if (!firstAttempt || firstAttempt.status === "timeout") return firstAttempt;
 
   if (firstAttempt.status === "success") {
     const parsed = extractActionPlanJson(firstAttempt.content);
-    debugLog("initial", "H2,H3", "convex/ai.ts:callOpenAIActionPlan:firstParse", "OpenAI action-plan first parse result", {
-      parseSucceeded: Boolean(parsed),
-      hasOpeningBrace: firstAttempt.content.includes("{"),
-      hasClosingBrace: firstAttempt.content.includes("}"),
-    });
     if (parsed) {
       return {
         status: "success",
@@ -604,23 +519,10 @@ async function callOpenAIActionPlan(
     "Return only valid JSON. No markdown. No explanation. Shape: {\"riskScores\":[{\"employeeId\":\"string\",\"score\":1,\"reason\":\"string\"}],\"prioritizedActions\":[\"string\"],\"draftMessages\":[{\"employeeId\":\"string\",\"message\":\"string\"}]}";
 
   const retryAttempt = await callOpenAIContent(prompt, strictPrompt);
-  debugLog("initial", "H1,H2,H3,H4", "convex/ai.ts:callOpenAIActionPlan:retryAttempt", "OpenAI action-plan retry returned", {
-    status: retryAttempt?.status ?? "no_api_key",
-    rawLength: retryAttempt?.status === "success" ? retryAttempt.content.length : retryAttempt?.rawResponse?.length ?? 0,
-    startsWithJson: retryAttempt?.status === "success" ? retryAttempt.content.trimStart().startsWith("{") : false,
-    containsRiskScores: retryAttempt?.status === "success" ? retryAttempt.content.includes("riskScores") : false,
-    containsPrioritizedActions: retryAttempt?.status === "success" ? retryAttempt.content.includes("prioritizedActions") : false,
-    containsDraftMessages: retryAttempt?.status === "success" ? retryAttempt.content.includes("draftMessages") : false,
-  });
   if (!retryAttempt || retryAttempt.status === "timeout") return retryAttempt;
 
   if (retryAttempt.status === "success") {
     const parsed = extractActionPlanJson(retryAttempt.content);
-    debugLog("initial", "H2,H3", "convex/ai.ts:callOpenAIActionPlan:retryParse", "OpenAI action-plan retry parse result", {
-      parseSucceeded: Boolean(parsed),
-      hasOpeningBrace: retryAttempt.content.includes("{"),
-      hasClosingBrace: retryAttempt.content.includes("}"),
-    });
     if (parsed) {
       return {
         status: "success",
@@ -781,12 +683,6 @@ export const generateTeamBrief = action({
       stepOnePrompt,
       "You summarize internal task tracker data into concise manager-ready prose."
     );
-    debugLog("initial", "H5,H4", "convex/ai.ts:generateTeamBrief:stepOne", "Team-summary step completed", {
-      status: stepOneResult?.status ?? "no_api_key",
-      outputLength: stepOneResult?.status === "success" ? stepOneResult.content.length : stepOneResult?.rawResponse?.length ?? 0,
-      taskCount: context.tasks.length,
-      employeeCount: context.employees.length,
-    });
     const teamSummary =
       stepOneResult?.status === "success" ? stepOneResult.content : fallbackBrief.summary;
 
@@ -812,12 +708,6 @@ export const generateTeamBrief = action({
         : stepTwoResult?.status === "parse_error"
           ? "parse_error"
           : "success";
-    debugLog("initial", "H1,H2,H3,H4,H5", "convex/ai.ts:generateTeamBrief:chainStatus", "AI chain selected final status", {
-      stepOneStatus: stepOneResult?.status ?? "no_api_key",
-      stepTwoStatus: stepTwoResult?.status ?? "no_api_key",
-      chainStatus,
-      usedFallbackActionPlan: stepTwoResult?.status !== "success",
-    });
 
     const employeeById = new Map(
       context.employees.map((employee) => [String(employee.id), employee])
