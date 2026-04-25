@@ -54,17 +54,6 @@ export default function AICopilotPanel({
   const [chainStep, setChainStep] = useState<"idle" | "analyzing" | "actions">("idle");
   const generateTeamBrief = useAction(api.ai.generateTeamBrief);
 
-  const debugLog = (
-    runId: string,
-    hypothesisId: string,
-    message: string,
-    data: Record<string, unknown>
-  ) => {
-    // #region agent log
-    fetch('http://127.0.0.1:7258/ingest/72512225-8bf5-4e09-86ed-f8b7e8f9a1a0',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'ed165d'},body:JSON.stringify({sessionId:'ed165d',runId,hypothesisId,location:'src/components/AICopilotPanel.tsx',message,data,timestamp:Date.now()})}).catch(()=>{});
-    // #endregion
-  };
-
   const parseErrorState = (err: any): ErrorState => {
     const message = err?.message ?? "Failed to generate AI team brief.";
     if (message.includes("validation_error")) {
@@ -142,24 +131,9 @@ export default function AICopilotPanel({
       }
 
       const result = await generateTeamBrief({ userEmail });
-      debugLog("initial-frontend", "H1,H2,H3,H4,H5", "AICopilotPanel received team brief result", {
-        status: result.status,
-        rawLength: result.rawResponse?.length ?? 0,
-        chainStepOneLength: result.chainStepOneOutput?.length ?? 0,
-        chainStepTwoLength: result.chainStepTwoOutput?.length ?? 0,
-        hasRiskScores: Boolean(result.riskScores?.length),
-        hasPrioritizedActions: Boolean(result.prioritizedActions?.length),
-        hasDraftMessages: Boolean(result.draftMessages?.length),
-        rawContainsRiskScores: result.rawResponse?.includes("riskScores") ?? false,
-        rawContainsPrioritizedActions: result.rawResponse?.includes("prioritizedActions") ?? false,
-        rawContainsDraftMessages: result.rawResponse?.includes("draftMessages") ?? false,
-      });
       setInsight(result);
     } catch (err: any) {
       console.error("Failed to generate AI team brief:", err);
-      debugLog("initial-frontend", "H4", "AICopilotPanel caught team brief error", {
-        message: err?.message ?? "unknown",
-      });
       setInsight(null);
       setError(parseErrorState(err));
     } finally {
