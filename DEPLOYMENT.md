@@ -1,100 +1,60 @@
 # Deployment Guide
 
-## Step 1: Deploy Convex Backend to Production
+This app has two deployed parts:
 
-1. **Deploy Convex functions:**
-   ```bash
-   npx convex deploy
-   ```
+- Convex for the database, real-time functions, and server-side AI actions.
+- Vercel for the React/Vite frontend.
 
-2. **Get your production Convex URL:**
-   After deployment, Convex will give you a production URL. It will look like:
-   ```
-   https://your-project.convex.cloud
-   ```
-
-3. **Save this URL** - you'll need it for Vercel deployment.
-
-## Step 2: Deploy Frontend to Vercel
-
-### Option A: Deploy via Vercel CLI (Recommended)
-
-1. **Install Vercel CLI:**
-   ```bash
-   npm i -g vercel
-   ```
-
-2. **Login to Vercel:**
-   ```bash
-   vercel login
-   ```
-
-3. **Deploy:**
-   ```bash
-   vercel
-   ```
-   
-   Follow the prompts:
-   - Link to existing project? **No** (first time)
-   - Project name: **tasktracker** (or your choice)
-   - Directory: **./** (current directory)
-   - Override settings? **No**
-
-4. **Set Environment Variable:**
-   After first deployment, set the Convex URL:
-   ```bash
-   vercel env add VITE_CONVEX_URL
-   ```
-   When prompted, enter your production Convex URL from Step 1.
-
-5. **Redeploy with environment variable:**
-   ```bash
-   vercel --prod
-   ```
-
-### Option B: Deploy via Vercel Dashboard
-
-1. **Go to [vercel.com](https://vercel.com)** and sign up/login
-
-2. **Import your GitHub repository:**
-   - Click "New Project"
-   - Import your `TaskTracker` repository
-   - Configure:
-     - Framework Preset: **Vite**
-     - Root Directory: **./**
-     - Build Command: `npm run build`
-     - Output Directory: `dist`
-
-3. **Add Environment Variable:**
-   - Go to Project Settings → Environment Variables
-   - Add: `VITE_CONVEX_URL` = your production Convex URL
-
-4. **Deploy:**
-   - Click "Deploy"
-   - Wait for deployment to complete
-   - Copy your deployment URL
-
-## Step 3: Update README with Live Link
-
-After deployment, update the README.md file:
-- Replace the placeholder URL with your actual Vercel deployment URL
-
-## Step 4: Push to GitHub
+## 1. Deploy Convex
 
 ```bash
-git add .
-git commit -m "Add deployment configuration and live link"
-git push origin feature
+npx convex login
+npx convex deploy
 ```
+
+Copy the production Convex URL from the deploy output. It should look like:
+
+```text
+https://your-project.convex.cloud
+```
+
+## 2. Configure AI Environment Variables in Convex
+
+The OpenAI key must stay server-side in Convex, not in Vite or Vercel browser env vars.
+
+```bash
+npx convex env set OPENAI_API_KEY your_openai_key
+npx convex env set OPENAI_MODEL gpt-4o-mini
+```
+
+`OPENAI_MODEL` is optional. If `OPENAI_API_KEY` is not configured, the app uses deterministic workflow rules so the AI demo still works.
+
+## 3. Deploy Frontend to Vercel
+
+In Vercel:
+
+- Framework preset: `Vite`
+- Build command: `npm run build`
+- Output directory: `dist`
+- Install command: `npm install`
+
+Add this Vercel environment variable:
+
+```text
+VITE_CONVEX_URL=https://your-project.convex.cloud
+```
+
+Then deploy or redeploy the project.
+
+## 4. Update GitHub About and README
+
+After Vercel deploys, copy the live Vercel URL and:
+
+- Add it to the GitHub repository About section as the website.
+- Replace the placeholder live demo URL in `README.md`.
 
 ## Troubleshooting
 
-### If deployment fails:
-- Make sure `VITE_CONVEX_URL` is set in Vercel environment variables
-- Check that Convex backend is deployed (`npx convex deploy`)
-- Verify build works locally: `npm run build`
-
-### If app doesn't connect to backend:
-- Check Vercel environment variables are set correctly
-- Make sure you're using the **production** Convex URL, not localhost
-- Redeploy after changing environment variables
+- If the frontend says Convex is not configured, verify `VITE_CONVEX_URL` is set in Vercel and redeploy.
+- If AI output is too generic, verify `OPENAI_API_KEY` is set in Convex.
+- If the build fails, run `npm run build` locally and check TypeScript errors.

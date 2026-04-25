@@ -1,4 +1,4 @@
-npm# Vercel Deployment Steps
+# Vercel Deployment Steps
 
 ## ✅ Step 1: Connect GitHub Repository
 
@@ -32,6 +32,13 @@ After importing, you'll see configuration options:
    - **Name:** `VITE_CONVEX_URL`
    - **Value:** (You'll get this from Convex - see Step 3 below)
    - **Environment:** Select all (Production, Preview, Development)
+
+AI provider keys should not be added to Vercel for this project. Add the OpenAI key to Convex instead:
+
+```bash
+npx convex env set OPENAI_API_KEY your_openai_key
+npx convex env set OPENAI_MODEL gpt-4o-mini
+```
 
 ## ✅ Step 3: Deploy Convex Backend First
 
