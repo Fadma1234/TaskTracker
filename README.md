@@ -6,7 +6,7 @@ This project is designed for the Klaviyo AI Builder Resident application. It dem
 
 ## Live Demo
 
-Live application: [Add your Vercel URL here](https://your-project.vercel.app)
+Live application: [https://task-tracker-phi-tawny.vercel.app](https://task-tracker-phi-tawny.vercel.app)
 
 Repository: `Fadma1234/TaskTracker`
 
