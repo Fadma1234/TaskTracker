@@ -79,6 +79,8 @@ type ActionPlan = {
 
 const dayMs = 24 * 60 * 60 * 1000;
 const openAITimeoutMs = 10_000;
+const jsonApiSystemMessage =
+  "You are a JSON API. Respond ONLY with a valid JSON object matching the exact schema provided. No markdown, no code fences, no explanation, no trailing text before or after the JSON.";
 
 export const collectAIContext = internalQuery({
   args: {
@@ -432,7 +434,11 @@ function extractActionPlanJson(content: string): ActionPlan | null {
 
 async function callOpenAIContent(
   prompt: string,
-  systemPrompt: string
+  systemPrompt: string,
+  options?: {
+    expectsJson?: boolean;
+    maxTokens?: number;
+  }
 ): Promise<OpenAIContentResult | null> {
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) return null;
@@ -450,11 +456,21 @@ async function callOpenAIContent(
       },
       body: JSON.stringify({
         model: process.env.OPENAI_MODEL ?? "gpt-4o-mini",
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: prompt },
-        ],
+        messages: options?.expectsJson
+          ? [
+              { role: "system", content: jsonApiSystemMessage },
+              { role: "system", content: systemPrompt },
+              { role: "user", content: prompt },
+            ]
+          : [
+              { role: "system", content: systemPrompt },
+              { role: "user", content: prompt },
+            ],
         temperature: 0.2,
+        max_tokens: options?.maxTokens,
+        ...(options?.expectsJson
+          ? { response_format: { type: "json_object" } }
+          : {}),
       }),
     });
 
@@ -501,7 +517,10 @@ async function callOpenAIActionPlan(
   const baseSystemPrompt =
     "You are an AI operations planner. Return JSON with exactly these keys: riskScores, prioritizedActions, draftMessages. riskScores is [{employeeId, score, reason}] where score is 1-10. draftMessages is [{employeeId, message}].";
 
-  const firstAttempt = await callOpenAIContent(prompt, baseSystemPrompt);
+  const firstAttempt = await callOpenAIContent(prompt, baseSystemPrompt, {
+    expectsJson: true,
+    maxTokens: 1500,
+  });
   if (!firstAttempt || firstAttempt.status === "timeout") return firstAttempt;
 
   if (firstAttempt.status === "success") {
@@ -518,7 +537,10 @@ async function callOpenAIActionPlan(
   const strictPrompt =
     "Return only valid JSON. No markdown. No explanation. Shape: {\"riskScores\":[{\"employeeId\":\"string\",\"score\":1,\"reason\":\"string\"}],\"prioritizedActions\":[\"string\"],\"draftMessages\":[{\"employeeId\":\"string\",\"message\":\"string\"}]}";
 
-  const retryAttempt = await callOpenAIContent(prompt, strictPrompt);
+  const retryAttempt = await callOpenAIContent(prompt, strictPrompt, {
+    expectsJson: true,
+    maxTokens: 1500,
+  });
   if (!retryAttempt || retryAttempt.status === "timeout") return retryAttempt;
 
   if (retryAttempt.status === "success") {
@@ -545,7 +567,8 @@ async function callOpenAIActionPlan(
 
 async function callOpenAIOnce(
   prompt: string,
-  systemPrompt: string
+  systemPrompt: string,
+  maxTokens: number
 ): Promise<OpenAIResult | null> {
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) return null;
@@ -566,11 +589,17 @@ async function callOpenAIOnce(
         messages: [
           {
             role: "system",
+            content: jsonApiSystemMessage,
+          },
+          {
+            role: "system",
             content: systemPrompt,
           },
           { role: "user", content: prompt },
         ],
         temperature: 0.2,
+        max_tokens: maxTokens,
+        response_format: { type: "json_object" },
       }),
     });
 
@@ -615,13 +644,13 @@ async function callOpenAI(prompt: string): Promise<OpenAIResult | null> {
   const baseSystemPrompt =
     "You are an internal AI operations copilot. Return JSON with keys summary, risks, recommendations, followUps. followUps is an array of employeeName, employeeEmail, message.";
 
-  const firstAttempt = await callOpenAIOnce(prompt, baseSystemPrompt);
+  const firstAttempt = await callOpenAIOnce(prompt, baseSystemPrompt, 800);
   if (firstAttempt?.status !== "parse_error") return firstAttempt;
 
   const strictJsonSystemPrompt =
     "Return only valid JSON. Do not use markdown. Do not include prose outside JSON. The JSON must exactly match this shape: {\"summary\":\"string\",\"risks\":[\"string\"],\"recommendations\":[\"string\"],\"followUps\":[{\"employeeName\":\"string\",\"employeeEmail\":\"string\",\"message\":\"string\"}]}.";
 
-  const retryAttempt = await callOpenAIOnce(prompt, strictJsonSystemPrompt);
+  const retryAttempt = await callOpenAIOnce(prompt, strictJsonSystemPrompt, 800);
   if (retryAttempt?.status === "timeout") return retryAttempt;
   if (retryAttempt?.status === "success") return retryAttempt;
 
@@ -681,7 +710,8 @@ export const generateTeamBrief = action({
 
     const stepOneResult = await callOpenAIContent(
       stepOnePrompt,
-      "You summarize internal task tracker data into concise manager-ready prose."
+      "You summarize internal task tracker data into concise manager-ready prose.",
+      { maxTokens: 1500 }
     );
     const teamSummary =
       stepOneResult?.status === "success" ? stepOneResult.content : fallbackBrief.summary;

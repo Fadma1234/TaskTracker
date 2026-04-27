@@ -111,13 +111,24 @@ export default function TaskCoach({ taskId, userEmail }: TaskCoachProps) {
             Break this task into next steps and draft a status update.
           </p>
         </div>
-        <button
-          onClick={handleCoachTask}
-          disabled={isLoading}
-          className="rounded-md bg-purple-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-purple-700 disabled:cursor-not-allowed disabled:opacity-60"
-        >
-          {isLoading ? "Coaching..." : "Coach Me"}
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleCoachTask}
+            disabled={isLoading}
+            className="rounded-md bg-purple-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-purple-700 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {isLoading ? "Coaching..." : "Coach Me"}
+          </button>
+          <span className="group relative inline-flex">
+            <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-gray-200 text-xs font-semibold text-gray-600">
+              ?
+            </span>
+            <span className="pointer-events-none absolute right-0 top-7 z-10 hidden w-64 rounded-md bg-gray-900 p-3 text-xs leading-5 text-white shadow-lg group-hover:block">
+              AI breaks this task into steps and drafts a status update you can
+              send to your manager.
+            </span>
+          </span>
+        </div>
       </div>
 
       {error && statusBanner(error.status, error.message)}
