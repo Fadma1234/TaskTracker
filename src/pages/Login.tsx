@@ -138,6 +138,24 @@ export default function Login() {
           <p className="mt-2 text-center text-sm text-gray-600">
             Sign in to your account
           </p>
+          <div className="mt-6 rounded-lg border border-blue-100 bg-blue-50 p-4 text-left">
+            <h3 className="text-sm font-semibold text-blue-950">
+              How to try the app
+            </h3>
+            <ol className="mt-3 list-decimal space-y-2 pl-5 text-sm text-blue-900">
+              <li>Enter any name and email to create a demo account.</li>
+              <li>Select Admin to load test data and manage the full team.</li>
+              <li>Use Load Test Data to add 4 employees and 10 sample tasks.</li>
+              <li>
+                Generate a team brief or use Coach Me on a task to test the AI
+                features.
+              </li>
+            </ol>
+            <p className="mt-3 text-xs text-blue-800">
+              No setup is required. Demo Mode is also available from the
+              dashboard if you want instant sample AI responses.
+            </p>
+          </div>
           {convexStatus === "checking" && (
             <div className="mt-4 bg-blue-50 border border-blue-200 text-blue-800 px-4 py-2 rounded text-sm">
               🔄 Checking backend connection...
