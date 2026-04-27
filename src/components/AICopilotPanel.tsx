@@ -161,17 +161,29 @@ export default function AICopilotPanel({
           </p>
         </div>
         <div className="flex flex-col gap-3">
-          <button
-            onClick={handleGenerateBrief}
-            disabled={isLoading}
-            className="rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            {isLoading
-              ? "Running AI chain..."
-              : demoMode
-                ? "Replay Demo Chain"
-                : "Generate Team Brief"}
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleGenerateBrief}
+              disabled={isLoading}
+              className="rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {isLoading
+                ? "Running AI chain..."
+                : demoMode
+                  ? "Replay Demo Chain"
+                  : "Generate Team Brief"}
+            </button>
+            <span className="group relative inline-flex">
+              <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-gray-200 text-xs font-semibold text-gray-600">
+                ?
+              </span>
+              <span className="pointer-events-none absolute right-0 top-7 z-10 hidden w-80 rounded-md bg-gray-900 p-3 text-xs leading-5 text-white shadow-lg group-hover:block">
+                Runs a 2-step AI chain: first summarizes your team's task
+                status, then generates risk scores, prioritized actions, and
+                draft messages for each at-risk employee.
+              </span>
+            </span>
+          </div>
           {isLoading && (
             <div className="rounded-md border border-indigo-100 bg-indigo-50 p-3 text-sm text-indigo-900">
               <div className="flex items-center gap-2">

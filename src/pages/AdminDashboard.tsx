@@ -9,6 +9,7 @@ import TaskForm from "../components/TaskForm";
 import EmployeeFilter from "../components/EmployeeFilter";
 import StatusFilter from "../components/StatusFilter";
 import AICopilotPanel from "../components/AICopilotPanel";
+import WelcomeBanner from "../components/WelcomeBanner";
 import {
   demoAIInsight,
   demoEmployees,
@@ -20,6 +21,14 @@ function DemoBadge() {
   return (
     <div className="fixed bottom-4 right-4 z-50 rounded-full bg-orange-500 px-4 py-2 text-sm font-bold uppercase tracking-wide text-white shadow-lg">
       Demo
+    </div>
+  );
+}
+
+function DemoModeBanner() {
+  return (
+    <div className="border-b border-amber-200 bg-amber-100 px-4 py-3 text-center text-sm font-medium text-amber-900">
+      Demo Mode — showing sample data. AI responses are instant and pre-loaded.
     </div>
   );
 }
@@ -70,6 +79,7 @@ function LiveAdminDashboard({ onToggleDemo }: { onToggleDemo: () => void }) {
   const updateTaskStatus = useMutation(api.tasks.updateTaskStatus);
   const deleteTask = useMutation(api.tasks.deleteTask);
   const deleteEmployee = useMutation(api.users.deleteEmployee);
+  const seedTestData = useMutation(api.seedData.seedTestData);
 
   const handleLogout = () => {
     localStorage.removeItem("userEmail");
@@ -127,6 +137,16 @@ function LiveAdminDashboard({ onToggleDemo }: { onToggleDemo: () => void }) {
     } catch (error: any) {
       console.error("Failed to delete employee:", error);
       alert(error?.message || "Failed to delete employee");
+    }
+  };
+
+  const handleLoadTestData = async () => {
+    try {
+      await seedTestData({ userEmail });
+      localStorage.setItem("testDataLoaded", "true");
+    } catch (error) {
+      console.error("Failed to load test data:", error);
+      alert("Failed to load test data");
     }
   };
 
@@ -199,6 +219,8 @@ function LiveAdminDashboard({ onToggleDemo }: { onToggleDemo: () => void }) {
       </nav>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <WelcomeBanner hasNoRealData={tasks.length === 0} userEmail={userEmail} />
+
         <Dashboard stats={stats} />
 
         <AICopilotPanel userEmail={userEmail} />
@@ -240,7 +262,7 @@ function LiveAdminDashboard({ onToggleDemo }: { onToggleDemo: () => void }) {
           </div>
         </div>
 
-        {employeeSummaries && employeeSummaries.length > 0 && (
+        {tasks.length > 0 && employeeSummaries && employeeSummaries.length > 0 && (
           <div className="mb-8 bg-white rounded-lg shadow-md p-6">
             <h3 className="text-lg font-semibold mb-4">Employee Performance</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -283,7 +305,7 @@ function LiveAdminDashboard({ onToggleDemo }: { onToggleDemo: () => void }) {
         )}
 
         {/* All Employees List Section */}
-        {employees && employees.length > 0 && (
+        {tasks.length > 0 && employees && employees.length > 0 && (
           <div className="mb-8 bg-white rounded-lg shadow-md p-6">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-lg font-semibold">All Employees</h3>
@@ -350,6 +372,25 @@ function LiveAdminDashboard({ onToggleDemo }: { onToggleDemo: () => void }) {
                 canEdit={true}
               />
             ))
+          ) : tasks.length === 0 ? (
+            <div className="col-span-full rounded-lg border border-dashed border-gray-300 bg-white p-10 text-center">
+              <div className="text-4xl" aria-hidden="true">
+                📋
+              </div>
+              <h3 className="mt-4 text-lg font-semibold text-gray-900">
+                No tasks yet
+              </h3>
+              <p className="mt-2 text-sm text-gray-600">
+                Load test data to see the AI features in action
+              </p>
+              <button
+                type="button"
+                onClick={handleLoadTestData}
+                className="mt-4 rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+              >
+                Load Test Data
+              </button>
+            </div>
           ) : (
             <div className="col-span-full text-center text-gray-500 py-8">
               No tasks found
@@ -473,6 +514,7 @@ function DemoAdminDashboard({ onToggleDemo }: { onToggleDemo: () => void }) {
           </div>
         </div>
       </nav>
+      <DemoModeBanner />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <Dashboard stats={stats.total === demoStats.total ? demoStats : stats} />

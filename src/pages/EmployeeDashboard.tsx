@@ -22,6 +22,14 @@ function DemoBadge() {
   );
 }
 
+function DemoModeBanner() {
+  return (
+    <div className="border-b border-amber-200 bg-amber-100 px-4 py-3 text-center text-sm font-medium text-amber-900">
+      Demo Mode — showing sample data. AI responses are instant and pre-loaded.
+    </div>
+  );
+}
+
 export default function EmployeeDashboard() {
   const [demoMode, setDemoMode] = useState(
     () => {
@@ -61,6 +69,7 @@ function LiveEmployeeDashboard({ onToggleDemo }: { onToggleDemo: () => void }) {
   const tasks = useQuery(api.tasks.getTasks, { userEmail });
 
   const updateTaskStatus = useMutation(api.tasks.updateTaskStatus);
+  const seedTestData = useMutation(api.seedData.seedTestData);
 
   const handleLogout = () => {
     localStorage.removeItem("userEmail");
@@ -76,6 +85,18 @@ function LiveEmployeeDashboard({ onToggleDemo }: { onToggleDemo: () => void }) {
     } catch (error) {
       console.error("Failed to update task status:", error);
       alert("Failed to update task status");
+    }
+  };
+
+  const handleLoadTestData = async () => {
+    try {
+      await seedTestData({ userEmail });
+      localStorage.setItem("testDataLoaded", "true");
+      localStorage.setItem("userEmail", "sarah.chen@tasktracker.test");
+      window.location.reload();
+    } catch (error) {
+      console.error("Failed to load test data:", error);
+      alert("Failed to load test data");
     }
   };
 
@@ -178,6 +199,25 @@ function LiveEmployeeDashboard({ onToggleDemo }: { onToggleDemo: () => void }) {
                 <TaskCoach taskId={task._id} userEmail={userEmail} />
               </div>
             ))
+          ) : tasks.length === 0 ? (
+            <div className="col-span-full rounded-lg border border-dashed border-gray-300 bg-white p-10 text-center">
+              <div className="text-4xl" aria-hidden="true">
+                📋
+              </div>
+              <h3 className="mt-4 text-lg font-semibold text-gray-900">
+                No tasks yet
+              </h3>
+              <p className="mt-2 text-sm text-gray-600">
+                Load test data to see the AI features in action
+              </p>
+              <button
+                type="button"
+                onClick={handleLoadTestData}
+                className="mt-4 rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+              >
+                Load Test Data
+              </button>
+            </div>
           ) : (
             <div className="col-span-full text-center text-gray-500 py-8">
               No tasks assigned to you yet
@@ -290,6 +330,7 @@ function DemoEmployeeDashboard({ onToggleDemo }: { onToggleDemo: () => void }) {
           </div>
         </div>
       </nav>
+      <DemoModeBanner />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <Dashboard stats={stats.total === 0 ? demoStats : stats} />
